@@ -1,4 +1,3 @@
-`timescale 1ns / 10ps
 //////////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2023, Avant-Gray LLC.  All rights reserved.
@@ -15,6 +14,8 @@
 //  https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
 //
 //////////////////////////////////////////////////////////////////////////////////
+
+`include "timescale.v"
 
 /// rotate a word
 ///
@@ -100,7 +101,7 @@ module ScheduleMessageQuad #(
         input  wire [MSGBITS-1 : 0] W_in
     );
 
-    wire [WORDBITS-1:0] W [MSGWORDS-1: 0];
+    reg [WORDBITS-1:0] W [MSGWORDS-1: 0];
     
     // by convention, all stages synch at input, not at output
     // capture the input at rising clock
@@ -111,7 +112,9 @@ module ScheduleMessageQuad #(
       begin
         localparam IW = I * WORDBITS;
         
-        PassLatch #(.WIDTH(WORDBITS)) inlatch (.q(W[I]), .clk(clk), .d(W_in[IW + WORDBITS - 1 : IW]));
+        always @(posedge clk) begin
+            W[I] <= W_in[IW + WORDBITS - 1 : IW];
+        end
       end
     endgenerate
   
@@ -122,7 +125,7 @@ module ScheduleMessageQuad #(
     assign KW1_out = K1_constIn + W[1];
     assign KW2_out = K2_constIn + W[2];
     assign KW3_out = K3_constIn + W[3];
-    
+
     wire [WORDBITS-1:0] s0_1, s1_14, WC;
     sig0 sig0_1  (.y_out(s0_1),  .x_in(W[1]));
     sig1 sig1_14 (.y_out(s1_14), .x_in(W[14]));
@@ -185,7 +188,7 @@ module ScheduleMessageFinalQuads #(
         input  wire [(WINWORDS * WORDBITS)-1 : 0] W_in
     );
 
-    wire [WORDBITS-1:0] W [WINWORDS-1: 0];
+    reg [WORDBITS-1:0] W [WINWORDS-1: 0];
     
     // by convention, all stages synch at input, not at output
     // capture the input at rising clock
@@ -195,7 +198,10 @@ module ScheduleMessageFinalQuads #(
         for (I = 0; I < WINWORDS; I = I + 1)
         begin
             localparam IW = I * WORDBITS;
-            PassLatch #(.WIDTH(WORDBITS)) inlatch (.q(W[I]), .clk(clk), .d(W_in[IW + WORDBITS - 1 : IW]));
+
+            always @(posedge clk) begin
+                W[I] <= W_in[IW + WORDBITS - 1 : IW];
+            end
         end
     endgenerate
   
@@ -237,7 +243,7 @@ module ScheduleMessageQuad15 #(
         input  wire [(WINWORDS * WORDBITS)-1 : 0] W_in
     );
 
-    wire [WORDBITS-1:0] W [WINWORDS-1: 0];
+    reg [WORDBITS-1:0] W [WINWORDS-1: 0];
     
     // by convention, all stages synch at input, not at output
     // capture the input at rising clock
@@ -247,7 +253,10 @@ module ScheduleMessageQuad15 #(
         for (I = 0; I < WINWORDS; I = I + 1)
         begin
             localparam IW = I * WORDBITS;
-            PassLatch #(.WIDTH(WORDBITS)) inlatch (.q(W[I]), .clk(clk), .d(W_in[IW + WORDBITS - 1 : IW]));
+
+            always @(posedge clk) begin
+                W[I] <= W_in[IW + WORDBITS - 1 : IW];
+            end
         end
     endgenerate
   

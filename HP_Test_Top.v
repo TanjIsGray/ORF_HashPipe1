@@ -1,4 +1,3 @@
-`timescale 1ns / 10ps
 //////////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2023, Avant-Gray LLC.  All rights reserved.
@@ -12,6 +11,8 @@
 // Project Name: https://github.com/TanjIsGray/LowE_BTC
 // 
 //////////////////////////////////////////////////////////////////////////////////
+
+`include "timescale.v"
 
 //  SHA-256 hash function variants for unrolling in special case of BTC mining.
 
@@ -28,23 +29,27 @@ module HP_Test_Top #(
         parameter HASHBITS  = HASHWORDS * WORDBITS,
         parameter MSGBITS   = MSGWORDS * WORDBITS
 ) (
-    input                       clk,
-    input  [MSGBITS-1:0]        req_msg,
-    output reg [HASHBITS-1:0]   resp_hash
+    input                       inPort_clk,
+    input  [MSGBITS-1:0]        inPort_msg,
+    output reg [HASHBITS-1:0]   outPort_hash
 );
 
     reg	[MSGBITS-1:0]	        req_msg_r;
 
-    PassLatch #(.WIDTH(MSGBITS)) msgIn (.q(req_msg_r), .clk(clk), .d(req_msg));
+    always @(posedge inPort_clk) begin
+        req_msg_r <= inPort_msg;
+    end
 
     wire [HASHBITS-1:0]  quadOutput;
-  
+
     WholeQuadPipe quadPipe (
         .a_h_out(quadOutput),
-        .clk(clk),
-        .msg_in(req_msg)
+        .clk(inPort_clk),
+        .msg_in(req_msg_r)
     );
 
-    PassLatch #(.WIDTH(HASHBITS)) hashOut (.q(resp_hash), .clk(clk), .d(quadOutput));
+    always @(posedge inPort_clk) begin
+        outPort_hash <= quadOutput;
+    end
 
 endmodule

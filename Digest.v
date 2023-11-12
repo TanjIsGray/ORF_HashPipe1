@@ -1,4 +1,3 @@
-`timescale 1ns / 10ps
 //////////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2023, Avant-Gray LLC.  All rights reserved.
@@ -16,21 +15,23 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
+`include "timescale.v"
+
 /// weak pass-thru gate with a latch
 ///
-module PassLatch #(parameter
-    WIDTH             = 1
-  )
-  (
-    output reg    [WIDTH-1:0]  q,
-    input  wire   clk,
-    input  wire   [WIDTH-1:0]  d
-    );
+// module PassLatch #(parameter
+//     WIDTH             = 1
+//   )
+//   (
+//     output reg    [WIDTH-1:0]  q,
+//     input  wire   clk,
+//     input  wire   [WIDTH-1:0]  d
+//     );
     
-  always @(posedge clk) begin
-    q <= d;
-  end
-endmodule
+//   always @(posedge clk) begin
+//     q <= d;
+//   end
+// endmodule
 
 /// weak pass-thru gate 2:1 choice of y:z controlled by x
 ///
@@ -300,7 +301,7 @@ module MixAll #(
         assign fBit = f_in[BIT];
         assign gBit = g_in[BIT];
         assign hBit = h_in[BIT];
-    
+
         if (0 == BIT) begin
             Mixer_0 Zero (
                 .aSum(aSum[BIT]), .aCarry(aCarry[BIT+1]),
@@ -344,11 +345,10 @@ module MixAll #(
                 .eCarryIn0(ec0[BIT-1]), .eCarryIn1(ec1[BIT-1])
                 );
             end // else
-    
+
     end // for BIT
 
 endmodule
-
 
 // 32 pipes together, 4 stages fused
 //
@@ -365,9 +365,10 @@ module DigestQuad #(
         input  wire [WORDBITS-1:0]      KW2_in,
         input  wire [WORDBITS-1:0]      KW3_in
     );
-    
-    wire [WORDBITS-1:0] abcIn [HASHWORDS - 1 : 0];
-    wire [WORDBITS-1:0] kw0In, kw1In, kw2In, kw3In;
+
+    reg [WORDBITS-1:0]  abcIn [HASHWORDS - 1 : 0];
+    reg [WORDBITS-1:0]  kw0In, kw1In, kw2In, kw3In;
+
 
     // by convention, all stages synch at input, not at output
     // capture the input at rising clock
@@ -377,14 +378,20 @@ module DigestQuad #(
       for (LI = 0; LI < HASHWORDS; LI = LI + 1)
       begin
         localparam LIW = LI * WORDBITS;
-        PassLatch #(.WIDTH(WORDBITS)) ahlatch (.q(abcIn[LI]), .clk(clk), .d(a_h_in[LIW + WORDBITS - 1 : LIW]));
+
+        always @(posedge clk) begin
+            abcIn[LI] <= a_h_in[LIW + WORDBITS - 1 : LIW];
+        end
+
       end
     endgenerate
 
-    PassLatch #(.WIDTH(WORDBITS)) kw0latch (.q(kw0In), .clk(clk), .d(KW0_in));
-    PassLatch #(.WIDTH(WORDBITS)) kw1latch (.q(kw1In), .clk(clk), .d(KW1_in));
-    PassLatch #(.WIDTH(WORDBITS)) kw2latch (.q(kw2In), .clk(clk), .d(KW2_in));
-    PassLatch #(.WIDTH(WORDBITS)) kw3latch (.q(kw3In), .clk(clk), .d(KW3_in));
+    always @(posedge clk) begin
+        kw0In <= KW0_in;
+        kw1In <= KW1_in;
+        kw2In <= KW2_in;
+        kw3In <= KW3_in;
+    end
 
     // the working bits are 8 x 32-bit words named a thru h
     
